@@ -1,0 +1,281 @@
+udf2s
+----------------
+ud for 2 seconds
+
+TODO:
+- instead of memory, use lookup table of bit arrays
+- implement self-checksumming, debugger + core dump + vm + sandbox detection
+
+- key lookup table with runtime generated xor keys that are regenerated after each use cycle:
+    - encrypt, decrypt, then regenerate
+
+use homomorphic encryption scheme for registers
+https://security.stackexchange.com/questions/109968/ram-encryption-is-it-possible
+https://stackoverflow.com/questions/16500549/how-to-keep-c-variables-in-ram-securely
+intel mpx
+
+- use rootkit to store keys
+    - API to clear keys on as soon as scope exits
+    -
+
+- write rootkit
+- encrypt current execution state
+- pack code
+- junk code insertion
+- re-write assembler this shit is so messy
+
+DEPRECATED:
+- register keeps index in xor key table of current used key
+- change random register states with every operation by generating new keys?
+- at first use of register, pick random one
+    - make registers named to make it more confusing jfl
+
+- FUCK registers, instead have fixed sized table of memory locations and associated id
+    - all encrypted, and key ids are shuffled every usage
+    - keys are also regenerated after every usage
+    - even if memory location not modified, every memory location is shuffled after each instruction
+- implement some sort of whitebox encryption instead of this one pointer traverse and ur done bullshit
+
+instruction structure:
+1 byte: opcode
+1 byte: param n size, ignore if param n is id
+param n
+
+example:
+store %1, "echo helloworld"
+1 byte: randomly generated opcode
+1 byte: 00 size of param 1
+1 byte: param 1 (randomly generated id)
+1 byte: size of param 2 (15)
+15 bytes: xored param 2
+15 bytes: param 2 xor key
+
+ 255  510 255
+      255 255
+      255 255
+--------------
+255  255  255 255
+            2^2    2^0
+
+1 xor 1 = 0
+
+
+ 11111111
+ 11111111
+--------
+111111111
+
+ 11101111
+ 11101011
+111011010
+
+ 1111
+ 1011
+------
+11010
+
+0001
+0001
+----
+0010
+
+1 xor 1 = 0
+carry = 1 and 1
+
+11111111 xor 11111111 = 0
+11111111 and 11111111 = 11111111
+
+xor 1 xor 2 xor carry_old
+carry = (1 and 2) or (2 and carry_old) or (1 and carry_old)
+carry_old = carry
+
+
+// size_t l_size = param_1.size();
+// if (param_2.size() > param_1.size()) {
+//     l_size = param_2.size();
+// }
+// std::vector<unsigned char> res;
+// int __res;
+// unsigned char carry = 0;
+// for (int i = l.size(); i > 0; i--) { // wrong jfl
+//     __res = param_1[i] + param_2[i] + carry;
+//     if (__res > 255) {
+//         res.push_back(255);
+//         carry = res % 255;
+//     }
+// }
+
+// use pointers TO vectors instead of moving vectors on mov
+
+
+
+
+(
+
+
+1010 + 10000
+
+(15 + 11) % 15
+
+
+0000001
+
+
+20
+41
+--
+61 * 2^0
+
+11111111 11111111
+2^16 + 2^15...
+
+0000 1111 1111 1111 1111
+0001 1111 1111 1111 1110
+
+example program:
+
+.start
+store %1, "echo helloworld" -> store string in db
+oscall shell, %1 -> call os function
+oscall printf, "%s", %1
+store %2, "wow"
+store %3, .start -> store ip offset in db
+mov %1, %2 -> copy db elem
+jeq %1, %2, %3 -> jump if eq to ip offset
+
+fib:
+
+fib:
+
+store %1, 1
+store %2, 1
+oscall scanf, "%i", %3
+store %4, 0
+store %5, 0
+.loop
+jeq %3, %4, .end
+add %5, %1
+add %5, %2
+oscall printf, "%c", %5
+mov %1, %2
+mov %2, %5
+jmp .loop
+.end
+
+- add dynamic address calculation
+
+
+std::vector<unsigned char> param_1 = mem[ins.params[0].id()];
+std::vector<unsigned char> param_2 = ins.params[1].is_id ? mem[ins.params[1].id()] : ins.params[1].data;
+size_t l_size = param_1.size();
+if (param_2.size() > param_1.size()) {
+    l_size = param_2.size();
+}
+std::vector<unsigned char> res;
+int __res;
+unsigned char carry = 0;
+for (int i = l.size(); i > 0; i--) { // wrong jfl
+    __res = param_1[i] + param_2[i] + carry;
+    if (__res > 255) {
+        res.push_back(255);
+        carry = res % 255;
+    }
+}
+
+- no registers only mem_elements lol
+
+// class mem_element {
+//     public:
+//         std::vector<bool> enc_data;
+//         int key_id = rgen_key_id();
+//
+//         void unlock() {
+//             for (int i = 0; i < enc_data.size(); i++) {
+//                 enc_data[i] ^= ktable[key_id].key[i];
+//             }
+//             ktable_nfilled++;
+//         }
+//
+//         void lock() {
+//             ktable[key_id].rgen();
+//             ktable[key_id].used = false;
+//             rgen_key_id();
+//             for (int i = 0; i < enc_data.size(); i++) {
+//                 enc_data[i] ^= ktable[key_id].key[i];
+//             }
+//         }
+//
+//     private:
+//         void rgen_key_id() {
+//             if (ktable_nfilled == ktable.size()) {
+//                 enc_key n_key;
+//                 ktable.push_back(n_key);
+//                 key_id = ktable.size() - 1;
+//             } else {
+//                 std::uniform_int_distribution<std::mt19937::result_type> udist(0, ktable.size());
+//                 do {
+//                     key_id = udist(rng);
+//                 }
+//                 while (ktable[key_id].used = true);
+//             }
+//             ktable[key_id].used = true;
+//         }
+// }
+
+
+
+
+
+
+
+
+
+// // reg class
+// class register {
+// public:
+//     std::bitset<REGSIZE> enc_data;
+//     int key_id = -1;
+//
+//     register() {
+//         key_id = rgen_key_id();
+//     }
+//
+//     void unlock() {
+//         for (int i = 0; i < enc_data.size(); i++) {
+//             enc_data[i] ^= ktable[key_id].key[i % ktable[key_id].key.size()];
+//         }
+//         ktable_nfilled++;
+//     }
+//
+//     void lock() {
+//         ktable[key_id].rgen();
+//         rgen_key_id();
+//         for (int i = 0; i < enc_data.size(); i++) {
+//             enc_data[i] ^= ktable[key_id].key[i % ktable[key_id].key.size()];
+//         }
+//     }
+//
+// private:
+//     void rgen_key_id() {
+//         if (key_id != -1) {
+//             ktable[key_id].used = false;
+//         }
+//         if (ktable_nfilled == ktable.size()) {
+//             for (int i = 0; i < ktable.size() * 2; i++) {
+//                 enc_key k;
+//                 ktable.push_back(k);
+//             }
+//             key_id = ktable_nfilled;
+//         } else {
+//             std::uniform_int_distribution<std::mt19937::result_type> udist(0, ktable.size());
+//             do {
+//                 key_id = udist(rng);
+//             }
+//             while (ktable[key_id].used == true);
+//         }
+//         ktable[key_id].used = true;
+//     }
+// };
+//
+// // register array
+// std::array<register, REGCOUNT> regs;
